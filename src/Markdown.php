@@ -169,7 +169,7 @@ class Markdown extends Parsedown
             $html .= ($isVideo ? '<video controls id="'.$id.'">' : '<audio controls id="'.$id.'">'); 
             $html .= '<source src="' . $sanitizeLink . '" type="' . $this->mediaType . '">';
             $html .= 'Your browser does not support the '.$typeLower.' element.';
-            $html .= ' <a href="' . $sanitizeLink . '">Download audio</a>';
+            $html .= ' <a href="' . $sanitizeLink . '">Download '.$typeLower.'</a>';
             $html .= ($isVideo ? '</video>' : '</audio>'); 
             $html .= '<figcaption>' . htmlspecialchars($description) . ' (' . htmlspecialchars($type) . ')</figcaption>';
             $html .= '</figure>';
@@ -268,7 +268,7 @@ class Markdown extends Parsedown
 	{
 		$string = str_replace([' ', ':', '.', ',', '-'], '', $string);
 		$kebabCase = preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $string);
-        
+
 		return strtolower($kebabCase);
 	}
 
