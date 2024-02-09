@@ -20,7 +20,7 @@ class Markdown extends Parsedown
     /**
      * @var array $enableTableOfContents Enable table of contents
     */
-    protected bool $enableTableOfContents = false;
+    protected bool $enableTableOfContents = true;
 
     /**
      * @var array $tableOfContents Table of contents
@@ -38,13 +38,17 @@ class Markdown extends Parsedown
     private string $hostLink = '';
 
     /**
+     * @var array $tableHeadings table headings
+    */
+    private array $tableHeadings = ["h2", "h3"];
+
+    /**
      * Initialize Markdown
     */
     public function __construct()
     {
         $this->setMarkupEscaped(true);
         $this->setUrlsLinked(false);
-        $this->setEnableTableOfContents(true);
         $this->BlockTypes["{"] = ['Media'];
         $this->InlineTypes["{"] = ['Media'];
     }
@@ -64,13 +68,27 @@ class Markdown extends Parsedown
     }
 
     /**
+     * Set table of content heading 
+     * 
+     * @param array $headings
+     * 
+     * @return self
+    */
+    public function setHeadings(array $headings): self
+    {
+        $this->tableHeadings = $headings;
+
+        return $this;
+    }
+
+    /**
      * Set if tables of contents should be enabled
      * 
      * @param bool $enable
      * 
      * @return self
     */
-    public function setEnableTableOfContents(bool $enable): self 
+    public function enableTableOfContents(bool $enable): self 
     {
         $this->enableTableOfContents = $enable;
 
@@ -110,10 +128,9 @@ class Markdown extends Parsedown
     */
     protected function addAttribute(array $Element, string $text): string
     {
-        $headingTypes = ["h2", "h3"];
         $attr = '';
 
-        if($this->enableTableOfContents && in_array($Element['name'], $headingTypes) && isset($Element['attr'])){
+        if($this->enableTableOfContents && in_array($Element['name'], $this->tableHeadings) && isset($Element['attr'])){
             $attrValue = self::toKebabCase($text);
             $this->tableOfContents[$attrValue] = $text;
             $attr =  ' ' . $Element['attr'] . '="' . $attrValue . '"';
@@ -137,6 +154,7 @@ class Markdown extends Parsedown
         {
             return $result;
         }
+
         if (preg_match('/^(\s*)\{(.+?)\}\((.+?)\)\((\S+?)\)$/', $Line['body'], $matches)){
             
             $description = $matches[2];
@@ -156,14 +174,11 @@ class Markdown extends Parsedown
             $html .= '<figcaption>' . htmlspecialchars($description) . ' (' . htmlspecialchars($type) . ')</figcaption>';
             $html .= '</figure>';
 
-            $result = array(
-                'markup' => $html,
-            );
+            $result = ['markup' => $html];
         }
 
         return $result;
     }
-
 
      /**
      * Build element
@@ -174,18 +189,14 @@ class Markdown extends Parsedown
     */
     protected function element(array $Element): string
     {
-        if ($this->safeMode)
-        {
+        if ($this->safeMode){
             $Element = $this->sanitizeElement($Element);
         }
 
         $markup = '<'.$Element['name'];
-        if (isset($Element['attributes']))
-        {
-            foreach ($Element['attributes'] as $name => $value)
-            {
-                if ($value === null)
-                {
+        if (isset($Element['attributes'])){
+            foreach ($Element['attributes'] as $name => $value){
+                if ($value === null) {
                     continue;
                 }
 
@@ -195,52 +206,56 @@ class Markdown extends Parsedown
 
         $permitRawHtml = false;
 
-        if (isset($Element['text']))
-        {
+        if (isset($Element['text'])){
             $text = $Element['text'];
-        }
-        // very strongly consider an alternative if you're writing an
-        // extension
-        elseif (isset($Element['rawHtml']))
-        {
+        }elseif (isset($Element['rawHtml'])) {
             $text = $Element['rawHtml'];
             $allowRawHtmlInSafeMode = isset($Element['allowRawHtmlInSafeMode']) && $Element['allowRawHtmlInSafeMode'];
             $permitRawHtml = !$this->safeMode || $allowRawHtmlInSafeMode;
         }
 
-        if (isset($text))
-        {
+        if (isset($text)){
 
             $markup .= $this->addAttribute($Element, $text);
-
             $markup .= '>';
 
-            if (!isset($Element['nonNestables']))
-            {
+            if (!isset($Element['nonNestables'])){
                 $Element['nonNestables'] = [];
             }
 
-            if (isset($Element['handler']))
-            {
+            if (isset($Element['handler'])){
                 $markup .= $this->{$Element['handler']}($text, $Element['nonNestables']);
-            }
-            elseif (!$permitRawHtml)
-            {
+            }elseif (!$permitRawHtml){
                 $markup .= parent::escape($text, true);
-            }
-            else
-            {
+            }else {
                 $markup .= $text;
             }
 
             $markup .= '</'.$Element['name'].'>';
-        }
-        else
-        {
+        }else{
             $markup .= ' />';
         }
 
         return $markup;
+    }
+
+    /**
+	 * Create block header
+	 *
+	 * @param array $Line 
+     * 
+	 * @return array $block
+	 */
+    protected function blockHeader($Line)
+    {
+        $block = parent::blockHeader($Line);
+
+        if (isset($block['element']))
+        {
+            $block['element']['attr'] = 'id';
+        }
+
+        return $block;
     }
 
     /**
@@ -253,6 +268,7 @@ class Markdown extends Parsedown
 	{
 		$string = str_replace([' ', ':', '.', ',', '-'], '', $string);
 		$kebabCase = preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $string);
+        
 		return strtolower($kebabCase);
 	}
 
