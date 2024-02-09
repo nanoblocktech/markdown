@@ -22,7 +22,7 @@
     
     "require": {
        "php": "^8.0",
-       "erusev/parsedown": "^1.7",
+       "erusev/parsedown": "^1.7"
     },
     
      "extra": {
