@@ -1,3 +1,5 @@
 # markdown
 
-```bash composer install nanoblocktech/markdown```
+```bash 
+composer install nanoblocktech/markdown
+```
