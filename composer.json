@@ -1,0 +1,47 @@
+{
+    "name": "nanoblocktech/markdown",
+    "type": "library",
+    "description": "PHP parsedown plugin to allow video and table of content.",
+    "license": "MIT",
+    "keywords": ["PHP", "luminova", "html markdown", "parsedown"],
+    "authors": [
+        {
+            "name": "Ujah Chigozie",
+            "email": "ujahchigozie@gmail.com"
+        },
+       {
+            "name": "Nanoblock Technology",
+            "email": "code@nanoblocktech.com"
+        }
+    ],
+    
+    "support": {
+        "issues": "https://github.com/nanoblocktech/markdown/issues",
+        "source": "https://github.com/nanoblocktech/markdown"
+    },
+    
+    "require": {
+       "php": "^8.0",
+       "erusev/parsedown": "^1.7",
+    },
+    
+     "extra": {
+        "branch-alias": {
+            "dev-master": "0.1-dev"
+        }
+    },
+
+    "autoload": {
+        "psr-4": { 
+            "Luminova\\ExtraUtils\\Markdown\\": "src/" 
+        }
+    },
+
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+  
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
