@@ -132,7 +132,7 @@ class Markdown extends Parsedown
         if(is_array($text)){
             $text = $text['text'] ?? '';
         }
-        
+
         if($this->enableTableOfContents && in_array($Element['name'], $this->tableHeadings) && isset($Element['attr'])){
             $attrValue = self::toKebabCase($text);
             $this->tableOfContents[$attrValue] = $text;
@@ -190,20 +190,21 @@ class Markdown extends Parsedown
      * 
      * @return string
     */
-    protected function element(array $Element): string
+    protected function element(array $Element)
     {
         if ($this->safeMode){
-            $Element = $this->sanitizeElement($Element);
+            $Element = $this->sanitiseElement($Element);
         }
 
         $markup = '<'.$Element['name'];
+
         if (isset($Element['attributes'])){
             foreach ($Element['attributes'] as $name => $value){
-                if ($value === null) {
+                if ($value === null){
                     continue;
                 }
 
-                $markup .= ' '.$name.'="'.parent::escape($value).'"';
+                $markup .= ' '.$name.'="'.self::escape($value).'"';
             }
         }
 
@@ -211,14 +212,16 @@ class Markdown extends Parsedown
 
         if (isset($Element['text'])){
             $text = $Element['text'];
-        }elseif (isset($Element['rawHtml'])) {
+        }
+        // very strongly consider an alternative if you're writing an
+        // extension
+        elseif (isset($Element['rawHtml'])){
             $text = $Element['rawHtml'];
             $allowRawHtmlInSafeMode = isset($Element['allowRawHtmlInSafeMode']) && $Element['allowRawHtmlInSafeMode'];
             $permitRawHtml = !$this->safeMode || $allowRawHtmlInSafeMode;
         }
 
         if (isset($text)){
-
             $markup .= $this->addAttribute($Element, $text);
             $markup .= '>';
 
@@ -229,13 +232,13 @@ class Markdown extends Parsedown
             if (isset($Element['handler'])){
                 $markup .= $this->{$Element['handler']}($text, $Element['nonNestables']);
             }elseif (!$permitRawHtml){
-                $markup .= parent::escape($text, true);
-            }else {
+                $markup .= self::escape($text, true);
+            }else{
                 $markup .= $text;
             }
 
             $markup .= '</'.$Element['name'].'>';
-        }else{
+        } else{
             $markup .= ' />';
         }
 
