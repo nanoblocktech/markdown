@@ -27,7 +27,7 @@
 
     "autoload": {
         "psr-4": { 
-           "Luminova\\ExtraUtils\\HtmlDocuments\\Markdown\\": "src/" 
+           "Luminova\\ExtraUtils\\HtmlDocuments\\": "src/" 
         }
     },
 
