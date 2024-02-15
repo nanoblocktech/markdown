@@ -122,14 +122,17 @@ class Markdown extends Parsedown
      * Add attribute to table of contents
      * 
      * @param array $Element
-     * @param string $text
+     * @param string|array $text
      * 
      * @return string
     */
-    protected function addAttribute(array $Element, string $text): string
+    protected function addAttribute(array $Element, string|array $text): string
     {
         $attr = '';
-
+        if(is_array($text)){
+            $text = $text['text'] ?? '';
+        }
+        
         if($this->enableTableOfContents && in_array($Element['name'], $this->tableHeadings) && isset($Element['attr'])){
             $attrValue = self::toKebabCase($text);
             $this->tableOfContents[$attrValue] = $text;
