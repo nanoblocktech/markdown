@@ -11,6 +11,10 @@ namespace Luminova\ExtraUtils\HtmlDocuments;
 
 use \Parsedown;
 
+/**
+ * "erusev/parsedown": "^1.7",
+*/
+
 class Markdown extends Parsedown
 {
     /**
@@ -200,7 +204,11 @@ class Markdown extends Parsedown
                     continue;
                 }
 
-                $markup .= ' '.$name.'="'.self::escape($value).'"';
+                if ($Element['name'] === 'a' && !filter_var($link = self::escape($value), FILTER_VALIDATE_URL)) {
+                    $markup .= ' ' . $name . '="' . $this->hostLink . '/' . ltrim($link, '/') . '"';
+                } else {
+                    $markup .= ' ' . $name . '="' . self::escape($value) . '"';
+                }
             }
         }
 
@@ -261,17 +269,17 @@ class Markdown extends Parsedown
     }
 
     /**
-	 * Convert a string to kababcase.
+	 * Convert a string to kebab case.
 	 *
 	 * @param string $string The input string to convert.
 	 * @return string The kebab-cased string.
 	 */
 	public static function toKebabCase(string $string): string
-    {
-        $string = preg_replace('/[^a-zA-Z0-9]+/', ' ', $string);
-  
-        $kebabCase = str_replace(' ', '-', $string);
+	{
+		$string = str_replace([' ', ':', '.', ',', '-'], '', $string);
+		$kebabCase = preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $string);
 
-        return strtolower($kebabCase);
-    }
+		return strtolower($kebabCase);
+	}
+
 }
