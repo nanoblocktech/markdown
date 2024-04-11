@@ -18,9 +18,10 @@ use \Parsedown;
 class Markdown extends Parsedown
 {
     /**
-     * @var array $enableTableOfContents Enable table of contents
+     * Enable table of contents
+     * @var array $isTableOfContents
     */
-    protected bool $enableTableOfContents = true;
+    protected bool $isTableOfContents = false;
 
     /**
      * @var array $tableOfContents Table of contents
@@ -41,6 +42,13 @@ class Markdown extends Parsedown
      * @var array $tableHeadings table headings
     */
     private array $tableHeadings = ["h2", "h3"];
+
+    /**
+     * Table of contents id prefix 
+     * 
+     * @var string $tablePrefix
+    */
+    private string $tablePrefix = '';
 
     /**
      * Initialize Markdown
@@ -67,6 +75,20 @@ class Markdown extends Parsedown
         return $this;
     }
 
+     /**
+     * Set id prefix for table of contents 
+     * 
+     * @param string $prefix
+     * 
+     * @return self
+    */
+    public function setIdPrefix(string $prefix): self
+    {
+        $this->tablePrefix = $prefix;
+
+        return $this;
+    }
+
     /**
      * Set table of content heading 
      * 
@@ -88,9 +110,9 @@ class Markdown extends Parsedown
      * 
      * @return self
     */
-    public function enableTableOfContents(bool $enable): self 
+    public function tableOfContents(bool $enable): self 
     {
-        $this->enableTableOfContents = $enable;
+        $this->isTableOfContents = $enable;
 
         return $this;
     }
@@ -105,6 +127,7 @@ class Markdown extends Parsedown
     public function setMediaType(string $type): self 
     {
         $this->mediaType = $type;
+        
         return $this;
     }
 
@@ -133,10 +156,10 @@ class Markdown extends Parsedown
             $text = $text['text'] ?? '';
         }
 
-        if($this->enableTableOfContents && in_array($Element['name'], $this->tableHeadings) && isset($Element['attr'])){
+        if($this->isTableOfContents && in_array($Element['name'], $this->tableHeadings) && isset($Element['attr'])){
             $attrValue = self::toKebabCase($text);
-            $this->tableOfContents[$attrValue] = $text;
-            $attr =  ' ' . $Element['attr'] . '="' . $attrValue . '"';
+            $this->tableOfContents[$this->tablePrefix . $attrValue] = $text;
+            $attr =  ' ' . $Element['attr'] . '="' . $this->tablePrefix . $attrValue . '"';
         }
 
         return $attr;
