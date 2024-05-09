@@ -311,20 +311,19 @@ class Markdown extends Parsedown
     {
         $block = parent::blockHeader($Line);
 
-        if (isset($block['element']))
-        {
+        if (isset($block['element'])){
             $block['element']['attr'] = 'id';
         }
 
         return $block;
     }
 
-    /**
+    	/**
 	 * Convert a string to the kebab case.
 	 *
 	 * @param string $string The input string to convert.
 	 * @return string The kebab-cased string.
-	 */
+	*/
 	public static function toKebabCase(string $string): string
 	{
         $string = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $string);
