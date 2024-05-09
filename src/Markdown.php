@@ -50,6 +50,13 @@ class Markdown extends Parsedown
     */
     private string $tablePrefix = '';
 
+     /**
+     * Heading anchor links
+     * 
+     * @var bool $anchor
+    */
+    private bool $anchor = true;
+
     /**
      * Initialize Markdown
     */
@@ -104,6 +111,20 @@ class Markdown extends Parsedown
     }
 
     /**
+     * Enable heading anchor link.
+     * 
+     * @param bool $anchors
+     * 
+     * @return self
+    */
+    public function headingAnchor(bool $anchors): self
+    {
+        $this->anchor = $anchors;
+
+        return $this;
+    }
+
+    /**
      * Set if tables of contents should be enabled
      * 
      * @param bool $enable
@@ -147,22 +168,25 @@ class Markdown extends Parsedown
      * @param array $Element
      * @param string|array $text
      * 
-     * @return string
+     * @return array
     */
-    protected function addAttribute(array $Element, string|array $text): string
+    protected function addAttribute(array $Element, string|array $text): array
     {
         $attr = '';
         if(is_array($text)){
             $text = $text['text'] ?? '';
         }
 
+        $id = null;
+        $headings = false;
         if($this->isTableOfContents && in_array($Element['name'], $this->tableHeadings) && isset($Element['attr'])){
-            $attrValue = self::toKebabCase($text);
-            $this->tableOfContents[$this->tablePrefix . $attrValue] = $text;
-            $attr =  ' ' . $Element['attr'] . '="' . $this->tablePrefix . $attrValue . '"';
+            $id = $this->tablePrefix . static::toKebabCase($text);
+            $this->tableOfContents[$id] = $text;
+            $attr =  ' ' . $Element['attr'] . '="' . $id . '"';
+            $headings = true;
         }
 
-        return $attr;
+        return [$attr, $id, $headings];
     }
 
     /**
@@ -187,7 +211,7 @@ class Markdown extends Parsedown
             $type = $matches[3];
             $link = $this->hostLink . $matches[4];
             $typeLower = strtolower($type);
-            $id = self::toKebabCase(basename($link));
+            $id = static::toKebabCase(basename($link));
             $sanitizeLink =  htmlspecialchars($link);
             $isVideo = ($typeLower === 'video');
 
@@ -249,8 +273,8 @@ class Markdown extends Parsedown
         }
 
         if (isset($text)){
-            $markup .= $this->addAttribute($Element, $text);
-            $markup .= '>';
+            [$attr, $id, $headings] = $this->addAttribute($Element, $text);
+            $markup .= $attr . '>';
 
             if (!isset($Element['nonNestables'])){
                 $Element['nonNestables'] = [];
@@ -264,6 +288,10 @@ class Markdown extends Parsedown
                 $markup .= $text;
             }
 
+            if($this->anchor && $headings){
+                $markup .= '<a class="anchor-link" href="#' . $id . '" title="Permalink to this headline"></a>'; 
+            }
+
             $markup .= '</'.$Element['name'].'>';
         } else{
             $markup .= ' />';
@@ -273,7 +301,7 @@ class Markdown extends Parsedown
     }
 
     /**
-	 * Create block header
+	 * Create a block header
 	 *
 	 * @param array $Line 
      * 
@@ -292,17 +320,17 @@ class Markdown extends Parsedown
     }
 
     /**
-	 * Convert a string to kebab case.
+	 * Convert a string to the kebab case.
 	 *
 	 * @param string $string The input string to convert.
 	 * @return string The kebab-cased string.
 	 */
 	public static function toKebabCase(string $string): string
 	{
-		$string = str_replace([' ', ':', '.', ',', '-'], '', $string);
-		$kebabCase = preg_replace('/([a-z0-9])([A-Z])/', '$1-$2', $string);
+        $string = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $string);
+        $string = str_replace(' ', '-', $string);
 
-		return strtolower($kebabCase);
+        return mb_strtolower($string);
 	}
 
 }
