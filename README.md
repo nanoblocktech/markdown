@@ -1,5 +1,10 @@
 # markdown
 
+PHP `Parsedown` extension to embed video and audio in markdown formatting.
+Additionally, it supports creating a table of contents and automatically inserts `target="_blank"` anchor if links don't match your hostname.
+
+---
+
 ```bash 
 composer install nanoblocktech/markdown
 ```
