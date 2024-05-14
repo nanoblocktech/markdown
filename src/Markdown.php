@@ -250,11 +250,13 @@ class Markdown extends Parsedown
                 if ($value === null){
                     continue;
                 }
+                $link = self::escape($value);
 
-                if ($Element['name'] === 'a' && !filter_var($link = self::escape($value), FILTER_VALIDATE_URL)) {
+                if ($Element['name'] === 'a' && !filter_var($link , FILTER_VALIDATE_URL)) {
                     $markup .= ' ' . $name . '="' . $this->hostLink . '/' . ltrim($link, '/') . '"';
                 } else {
-                    $markup .= ' ' . $name . '="' . self::escape($value) . '"';
+                    $target = str_starts_with($link, $this->hostLink)?:' target="_blank" rel="noopener noreferrer"';
+                    $markup .= ' ' . $name . '="' . $link . '"' . $target;
                 }
             }
         }
