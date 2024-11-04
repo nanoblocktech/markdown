@@ -33,9 +33,12 @@ class Markdown extends Parsedown
 	/**
 	 * Media type.
 	 * 
-	 * @var string $mediaType
+	 * @var array<string,string> $mediaType
 	 */
-	protected string $mediaType = 'audio/ogg; codecs=opus';
+	protected array $mediaType = [
+		'audio' => 'audio/ogg; codecs=opus',
+		'video' => 'video/mp4'
+	];
 	
 	/**
 	 * Hostname link.
@@ -187,16 +190,17 @@ class Markdown extends Parsedown
 	/**
 	 * Set media type
 	 * 
-	 * @param string $type
+	 * @param string $context The media context type (e.g, `audio`, `video`).
+     	 * @param string $type The attribute of media type (e.g, `audio/ogg; codecs=opus`).
 	 * 
 	 * @return self
 	 */
-	public function setMediaType(string $type): self 
+	public function setMediaType(string $context, string $type): self 
 	{
-		$this->mediaType = $type;
+		$this->mediaType[$context] = $type;
 		
 		return $this;
-		}
+	}
 
 	/**
 	 * Get table of contents.
@@ -263,7 +267,7 @@ class Markdown extends Parsedown
 		
 		    $html = '<figure class="media-player">';
 		    $html .= ($isVideo ? '<video controls id="'.$id.'">' : '<audio controls id="'.$id.'">'); 
-		    $html .= '<source src="' . $sanitizeLink . '" type="' . $this->mediaType . '">';
+		    $html .= '<source src="' . $sanitizeLink . '" type="' . $this->mediaType[$typeLower] . '">';
 		    $html .= 'Your browser does not support the '.$typeLower.' element.';
 		    $html .= ' <a href="' . $sanitizeLink . '">Download '.$typeLower.'</a>';
 		    $html .= ($isVideo ? '</video>' : '</audio>'); 
@@ -400,5 +404,4 @@ class Markdown extends Parsedown
 		
 		return mb_strtolower($string);
 	}
-
 }
