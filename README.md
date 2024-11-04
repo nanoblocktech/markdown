@@ -21,6 +21,9 @@ Configure markdown
 // Enable table of contents
 $markdown->tableOfContents(true);
 
+// Enable responsive HTML table
+$markdown->responsiveTable(true);
+
 // Set heading to allow in the table of contents
 $markdown->setHeadings(['h1', 'h2']);
 
