@@ -18,7 +18,7 @@ $markdown = new Markdown();
 ### Audio Embedding 
 
 ```markdown
-{Description}(audio)(/path/to/autdio.opus)
+{Description}(audio)(/path/to/audio.opus)
 ```
 
 ### Video Embedding 
@@ -46,7 +46,8 @@ $markdown->setIdPrefix('my-contents-');
 $markdown->setLink('https://example.com/assets/');
 
 // Set media type
-$markdown->setMediaType('audio/ogg; codecs=opus');
+$markdown->setMediaType('audio', 'audio/ogg; codecs=opus');
+$markdown->setMediaType('video', 'video/mp4');
 
 // Get table of contents
 $arry = $markdown->getTableOfContents();
