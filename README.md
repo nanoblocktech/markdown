@@ -15,6 +15,18 @@ Initialize markdown.
 $markdown = new Markdown();
 ```
 
+### Audio Embedding 
+
+```markdown
+{Description}(audio)(/path/to/autdio.opus)
+```
+
+### Video Embedding 
+
+```markdown
+{Description}(video)(/path/to/video.mp4)
+```
+
 Configure markdown 
 
 ```php
