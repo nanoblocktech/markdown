@@ -93,6 +93,13 @@ class Markdown extends Parsedown
 	];
 
 	/**
+	 * Optional attributes for anchor links.
+	 * 
+	 * @var array $linkAttributes
+	 */
+	private array $linkAttributes = [];
+
+	/**
 	 * Initialize Markdown.
 	 */
 	public function __construct()
@@ -106,7 +113,7 @@ class Markdown extends Parsedown
 	/**
 	 * Set host link.
 	 * 
-	 * @param string $link
+	 * @param string $link The based host URL.
 	 * 
 	 * @return self
 	 */
@@ -118,9 +125,25 @@ class Markdown extends Parsedown
 	}
 
 	/**
+	 * Set a default attribute for anchor links.
+	 * 
+	 * @param array<string,string> $attributes The attributes for anchor links.
+	 * 
+	 * @return self
+	 */
+	public function setLinkAttributes(array $attributes): self
+	{
+		$this->linkAttributes = $attributes;
+		
+		return $this;
+	}
+
+	
+
+	/**
 	 * Set id prefix for table of contents.
 	 * 
-	 * @param string $prefix
+	 * @param string $prefix The id prefix for table of contents.
 	 * 
 	 * @return self
 	 */
@@ -134,7 +157,7 @@ class Markdown extends Parsedown
 	/**
 	 * Set table of contents heading.
 	 * 
-	 * @param array $headings
+	 * @param array $headings The supported headings for table of contents.
 	 * 
 	 * @return self
 	 */
@@ -148,7 +171,7 @@ class Markdown extends Parsedown
 	/**
 	 * Enable heading anchor link.
 	 * 
-	 * @param bool $anchors
+	 * @param bool $anchors The enable/disable of heading anchor link.
 	 * 
 	 * @return self
 	 */
@@ -162,7 +185,7 @@ class Markdown extends Parsedown
 	/**
 	 * Enable responsive table.
 	 * 
-	 * @param bool $responsive
+	 * @param bool $responsive The enable/disable of responsive table.
 	 * 
 	 * @return self
 	 */
@@ -176,7 +199,7 @@ class Markdown extends Parsedown
 	/**
 	 * Set if tables of contents should be enabled.
 	 * 
-	 * @param bool $enable
+	 * @param bool $enable The enable/disable of table of contents.
 	 * 
 	 * @return self
 	 */
@@ -191,7 +214,7 @@ class Markdown extends Parsedown
 	 * Set media type
 	 * 
 	 * @param string $context The media context type (e.g, `audio`, `video`).
-     	 * @param string $type The attribute of media type (e.g, `audio/ogg; codecs=opus`).
+     * @param string $type The attribute of media type (e.g, `audio/ogg; codecs=opus`).
 	 * 
 	 * @return self
 	 */
@@ -307,25 +330,31 @@ class Markdown extends Parsedown
 		    $Element['attributes']['class'] = 'table' . ($class ? ' ' : '') . $class;
 		    $markup = '<div class="table-responsive"><table';
 		}
+
+		if($Element['name'] === 'a' && $this->linkAttributes){
+			foreach($this->linkAttributes as $att => $attrVal){
+				$markup .= " {$att}=\"{$attrVal}\"";
+			}
+		}
 	
 		if (isset($Element['attributes'])){
 		    foreach ($Element['attributes'] as $name => $value){
-			if ($value === null){
-			    continue;
-			}
-		
-			$value = self::escape($value);
-		
-			if($Element['name'] === 'a'){
-			    if (!filter_var($value , FILTER_VALIDATE_URL)) {
-				$markup .= ' ' . $name . '="' . $this->hostLink . '/' . ltrim($value, '/') . '"';
-			    } else {
-				$target = str_starts_with($value, $this->hostLink)?:' target="_blank" rel="noopener noreferrer"';
-				$markup .= ' ' . $name . '="' . $value . '"' . $target;
-			    }
-			}else{
-			    $markup .= ' '.$name.'="'.$value.'"';
-			}
+				if ($value === null){
+					continue;
+				}
+			
+				$value = self::escape($value);
+			
+				if($Element['name'] === 'a'){
+					if (!filter_var($value , FILTER_VALIDATE_URL)) {
+						$markup .= ' ' . $name . '="' . $this->hostLink . '/' . ltrim($value, '/') . '"';
+					} else {
+						$target = str_starts_with($value, $this->hostLink)?:' target="_blank" rel="noopener noreferrer"';
+						$markup .= ' ' . $name . '="' . $value . '"' . $target;
+					}
+				}else{
+					$markup .= ' '.$name.'="'.$value.'"';
+				}
 		    }
 		}
 	
@@ -347,19 +376,19 @@ class Markdown extends Parsedown
 		    $markup .= $attr . '>';
 		
 		    if (!isset($Element['nonNestables'])){
-			$Element['nonNestables'] = [];
+				$Element['nonNestables'] = [];
 		    }
 		
 		    if (isset($Element['handler'])){
-			$markup .= $this->{$Element['handler']}($text, $Element['nonNestables']);
+				$markup .= $this->{$Element['handler']}($text, $Element['nonNestables']);
 		    }elseif (!$permitRawHtml){
-			$markup .= self::escape($text, true);
+				$markup .= self::escape($text, true);
 		    }else{
-			$markup .= $text;
+				$markup .= $text;
 		    }
 		
 		    if($this->anchor && $headings){
-			$markup .= '<a class="anchor-link" href="#' . $id . '" title="Permalink to this headline"></a>'; 
+				$markup .= '<a class="anchor-link" href="#' . $id . '" title="Permalink to this headline"></a>'; 
 		    }
 		
 		    $markup .= '</'.$Element['name'].'>';
@@ -368,7 +397,6 @@ class Markdown extends Parsedown
 		}
 		
 		$markup .= $Element['name'] === 'table' ? '</div>' : '';
-		
 		return $markup;
 	}
 
