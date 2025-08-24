@@ -254,7 +254,7 @@ class Markdown extends Parsedown
 		$headings = false;
 		if($this->isTableOfContents && in_array($Element['name'], $this->tableHeadings) && isset($Element['attr'])){
 		    $id = $this->tablePrefix . static::toKebabCase($text);
-		    $this->tableOfContents[$id] = $text;
+		    $this->tableOfContents[$id] = self::toName($text);
 		    $attr =  ' ' . $Element['attr'] . '="' . $id . '"';
 		    $headings = true;
 		}
@@ -419,17 +419,33 @@ class Markdown extends Parsedown
 	}
 
 	/**
-	 * Convert a string to the kebab case.
+	 * Convert a string to kebab-case.
 	 *
 	 * @param string $string The input string to convert.
-	 * 
 	 * @return string The kebab-cased string.
 	 */
 	public static function toKebabCase(string $string): string
 	{
-		$string = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $string);
-		$string = str_replace(' ', '-', $string);
-		
-		return mb_strtolower($string);
+		$string = preg_replace(
+			'/[^\p{L}\p{N}]+/u', '-', 
+			str_replace(['(', ')', '`'], '', $string)
+		);
+		return mb_strtolower(trim($string, '-'));
+	}
+
+	/**
+	 * Extract a valid name from text, stripping optional backticks inside brackets.
+	 *
+	 * @param string $text The input string to process.
+	 * @return string The normalized name string.
+	 */
+	private static function toName(string $text): string
+	{
+		$text = str_replace('\\', ' ', $text);
+
+		// Extract text inside [ ... ] ignoring backticks if present
+		return preg_match('/\[(?:`)?([^`\]]+)(?:`)?\]/', $text, $matches)
+			? $matches[1]
+			: $text;
 	}
 }
