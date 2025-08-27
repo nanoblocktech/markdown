@@ -138,8 +138,6 @@ class Markdown extends Parsedown
 		return $this;
 	}
 
-	
-
 	/**
 	 * Set id prefix for table of contents.
 	 * 
@@ -253,7 +251,7 @@ class Markdown extends Parsedown
 		$id = null;
 		$headings = false;
 		if($this->isTableOfContents && in_array($Element['name'], $this->tableHeadings) && isset($Element['attr'])){
-		    $id = $this->tablePrefix . static::toKebabCase($text);
+		    $id = $this->tablePrefix . $this->toKebabCase($text);
 		    $this->tableOfContents[$id] = self::toName($text);
 		    $attr =  ' ' . $Element['attr'] . '="' . $id . '"';
 		    $headings = true;
@@ -284,7 +282,7 @@ class Markdown extends Parsedown
 		    $type = $matches[3];
 		    $link = $this->hostLink . $matches[4];
 		    $typeLower = strtolower($type);
-		    $id = static::toKebabCase(basename($link));
+		    $id = $this->toKebabCase(basename($link));
 		    $sanitizeLink =  htmlspecialchars($link);
 		    $isVideo = ($typeLower === 'video');
 		
@@ -424,11 +422,11 @@ class Markdown extends Parsedown
 	 * @param string $string The input string to convert.
 	 * @return string The kebab-cased string.
 	 */
-	public static function toKebabCase(string $string): string
+	public function toKebabCase(string $string): string
 	{
 		$string = preg_replace(
 			'/[^\p{L}\p{N}]+/u', '-', 
-			str_replace(['(', ')', '`'], '', $string)
+			str_replace(['(', ')', '`', '::', '\\', $this->tablePrefix], ['', '', '', ' ', ' ', ''], $string)
 		);
 		return mb_strtolower(trim($string, '-'));
 	}
@@ -441,9 +439,7 @@ class Markdown extends Parsedown
 	 */
 	private static function toName(string $text): string
 	{
-		$text = str_replace('\\', ' ', $text);
-
-		// Extract text inside [ ... ] ignoring backticks if present
+		$text = str_replace(['\\', '::'], ' ', $text);
 		return preg_match('/\[(?:`)?([^`\]]+)(?:`)?\]/', $text, $matches)
 			? $matches[1]
 			: $text;
