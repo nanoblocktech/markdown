@@ -12,7 +12,7 @@ namespace Luminova\ExtraUtils\HtmlDocuments;
 use \Parsedown;
 
 /**
- * "erusev/parsedown": "^1.7",
+ * @version "erusev/parsedown": "^1.8.0",
  */
 class Markdown extends Parsedown
 {
@@ -241,23 +241,74 @@ class Markdown extends Parsedown
 	 * 
 	 * @return array
 	 */
-	protected function addAttribute(array $Element, string|array $text): array
+	protected function addAttribute(array $Element, ?string $text): array
 	{
-		$attr = '';
-		if(is_array($text)){
-		    $text = $text['text'] ?? '';
+		if(!$text || !$this->isTableOfContents){
+			return ['', null, false, ''];
 		}
-		
+
+		$eleName = $Element['name'] ?? null;
+
+		if(!$eleName || !in_array($eleName, $this->tableHeadings)){
+			return ['', null, false, ''];
+		}
+
+		$attr = '';
 		$id = null;
 		$headings = false;
-		if($this->isTableOfContents && in_array($Element['name'], $this->tableHeadings) && isset($Element['attr'])){
+		$text = htmlspecialchars(strip_tags($text), ENT_QUOTES, 'UTF-8');
+
+		if(isset($Element['attr'])){
 		    $id = $this->tablePrefix . $this->toKebabCase($text);
 		    $this->tableOfContents[$id] = self::toName($text);
-		    $attr =  ' ' . $Element['attr'] . '="' . $id . '"';
+
+		    $attr =  ' ' . $Element['attr'] . '="' . $id . '" tabindex="0"';
 		    $headings = true;
 		}
 		
-		return [$attr, $id, $headings];
+		return [$attr, $id, $headings, $text];
+	}
+
+	/**
+	 * Parse a Markdown text node into its final HTML string.
+	 *
+	 * Resolution order:
+	 * 1. If the element contains a nested `elements` array, they are rendered
+	 *    recursively via $this->elements() and returned.
+	 * 2. If the element contains a single `element`, it is rendered via
+	 *    $this->element() and returned.
+	 * 3. If no child elements exist and raw HTML is NOT permitted, the provided
+	 *    text is escaped to prevent HTML injection.
+	 * 4. Otherwise, the raw text is returned as-is.
+	 *
+	 * This method acts as the final stage for text node rendering, ensuring
+	 * consistent handling of nested structures and safe output when raw HTML
+	 * is disallowed.
+	 *
+	 * @param array       $Element        Parsed Markdown element definition.
+	 * @param string|null $text           Raw text content for the element.
+	 * @param bool        $permitRawHtml  Whether raw HTML output is allowed.
+	 *
+	 * @return string Rendered HTML-safe string output.
+	 */
+	protected function parseText(array $Element, ?string $text, bool $permitRawHtml): string
+	{
+		if (isset($Element['elements']))
+		{
+			return $this->elements($Element['elements']);
+		}
+
+		if (isset($Element['element']))
+		{
+			return $this->element($Element['element']);
+		}
+
+		if (!$permitRawHtml)
+		{
+			return self::escape($text, true);
+		}
+	
+		return (string) $text;
 	}
 
 	/**
@@ -309,94 +360,126 @@ class Markdown extends Parsedown
 	 * @return string
 	 */
 	protected function element(array $Element)
-	{
+    {
+		$eleName = $Element['name'] ?? null;
+
 		if(
-		    !in_array($Element['name'], self::$extended) || 
-		    ($Element['name'] === 'table' && !$this->responsiveTable)
+			!$eleName ||
+			($eleName === 'table' && !$this->responsiveTable)
+			|| !in_array($eleName, self::$extended)
 		){
 		    return parent::element($Element);
 		}
-	
-		if ($this->safeMode){
-		    $Element = $this->sanitiseElement($Element);
-		}
-	
-		$markup = '<'. $Element['name'];
-		
-		if($Element['name'] === 'table'){
-		    $class = $Element['attributes']['class'] ?? '';
-		    $Element['attributes']['class'] = 'table' . ($class ? ' ' : '') . $class;
-		    $markup = '<div class="table-responsive"><table';
-		}
 
-		if($Element['name'] === 'a' && $this->linkAttributes){
-			foreach($this->linkAttributes as $att => $attrVal){
-				$markup .= " {$att}=\"{$attrVal}\"";
+        if ($this->safeMode)
+        {
+            $Element = $this->sanitiseElement($Element);
+        }
+
+        $Element = $this->handle($Element);
+        $hasName = isset($Element['name']);
+
+        $markup = '';
+
+        if ($hasName)
+        {
+			$eleName = $Element['name'];
+			if($eleName === 'table'){
+				$class = $Element['attributes']['class'] ?? '';
+				$Element['attributes']['class'] = 'table' . ($class ? ' ' : '') . $class;
+
+				$markup .= '<div class="table-responsive"><table';
+			}elseif($eleName === 'a' && $this->linkAttributes){
+				$markup .= '<' . $eleName;
+				$Element['attributes'] = array_merge(
+					$Element['attributes'], 
+					$this->linkAttributes
+				);
+			}else{
+				$markup .= '<' . $eleName;
 			}
-		}
-	
-		if (isset($Element['attributes'])){
-		    foreach ($Element['attributes'] as $name => $value){
-				if ($value === null){
-					continue;
-				}
-			
-				$value = self::escape($value);
-			
-				if($Element['name'] === 'a'){
-					if (!filter_var($value , FILTER_VALIDATE_URL)) {
-						$markup .= ' ' . $name . '="' . $this->hostLink . '/' . ltrim($value, '/') . '"';
-					} else {
-						$target = str_starts_with($value, $this->hostLink)?:' target="_blank" rel="noopener noreferrer"';
+
+            if (isset($Element['attributes']))
+            {
+                foreach ($Element['attributes'] as $name => $value)
+                {
+                    if ($value === null)
+                    {
+                        continue;
+                    }
+
+					$value = self::escape($value);
+
+					if($eleName === 'a'){
+						if ($name === 'href' && !filter_var($value , FILTER_VALIDATE_URL)) {
+							$markup .= ' ' . $name . '="' . $this->hostLink . '/' . ltrim($value, '/') . '"';
+							continue;
+						}
+						
+						$target = str_starts_with($value, $this->hostLink) 
+							?:' target="_blank" rel="noopener noreferrer"';
+						
 						$markup .= ' ' . $name . '="' . $value . '"' . $target;
+						continue;
 					}
-				}else{
-					$markup .= ' '.$name.'="'.$value.'"';
-				}
+
+					$markup .= " $name=\"".$value.'"';
+                }
+            }
+        }
+
+        $permitRawHtml = false;
+
+        if (isset($Element['text']))
+        {
+            $text = $Element['text'];
+        }
+        // very strongly consider an alternative if you're writing an
+        // extension
+        elseif (isset($Element['rawHtml']))
+        {
+            $text = $Element['rawHtml'];
+
+            $allowRawHtmlInSafeMode = isset($Element['allowRawHtmlInSafeMode']) 
+				&& $Element['allowRawHtmlInSafeMode'];
+
+            $permitRawHtml = !$this->safeMode || $allowRawHtmlInSafeMode;
+        }
+
+        $hasContent = isset($text) || isset($Element['element']) || isset($Element['elements']);
+
+        if ($hasContent)
+        {
+			$text = $this->parseText(
+				$Element,
+				$text ?? null,
+				$permitRawHtml
+			);
+
+		    [$attr, $id, $headings, $description] = $this->addAttribute($Element, $text);
+
+            $markup .= $hasName ? $attr . '>' : '';
+			$markup .= $text;
+
+			if($this->anchor && $headings){
+				$markup .= '<a 
+					class="anchor-link" href="#' . $id . '" 
+					title="Permalink to ' . $description . ' section" 
+					aria-label="Permalink to ' . $description . ' section"
+				></a>'; 
 		    }
-		}
-	
-		$permitRawHtml = false;
-		
-		if (isset($Element['text'])){
-		    $text = $Element['text'];
-		}
-		// very strongly consider an alternative if you're writing an
-		// extension
-		elseif (isset($Element['rawHtml'])){
-		    $text = $Element['rawHtml'];
-		    $allowRawHtmlInSafeMode = isset($Element['allowRawHtmlInSafeMode']) && $Element['allowRawHtmlInSafeMode'];
-		    $permitRawHtml = !$this->safeMode || $allowRawHtmlInSafeMode;
-		}
-		
-		if (isset($text)){
-		    [$attr, $id, $headings] = $this->addAttribute($Element, $text);
-		    $markup .= $attr . '>';
-		
-		    if (!isset($Element['nonNestables'])){
-				$Element['nonNestables'] = [];
-		    }
-		
-		    if (isset($Element['handler'])){
-				$markup .= $this->{$Element['handler']}($text, $Element['nonNestables']);
-		    }elseif (!$permitRawHtml){
-				$markup .= self::escape($text, true);
-		    }else{
-				$markup .= $text;
-		    }
-		
-		    if($this->anchor && $headings){
-				$markup .= '<a class="anchor-link" href="#' . $id . '" title="Permalink to this headline"></a>'; 
-		    }
-		
-		    $markup .= '</'.$Element['name'].'>';
-		} else{
-		    $markup .= ' />';
-		}
-		
-		$markup .= $Element['name'] === 'table' ? '</div>' : '';
-		return $markup;
-	}
+
+            $markup .= $hasName ? '</' . $Element['name'] . '>' : '';
+        }
+        elseif ($hasName)
+        {
+            $markup .= ' />';
+        }
+
+		$markup .= ($hasName && $Element['name'] === 'table') ? '</div>' : '';
+
+        return $markup;
+    }
 
 	/**
 	 * Create a block header.
