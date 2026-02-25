@@ -1,60 +1,160 @@
-# Markdown
+# PHP Markdown Extension
 
-PHP Markdown is an extension of `Parsedown`, to embed video and audio in markdown formatting.
-Additionally, it supports creating a table of contents and automatically inserts `target="_blank"` anchor if links don't match your hostname.
+[![PHP Version](https://img.shields.io/badge/PHP-8.0%2B-blue)](https://www.php.net/)
+[![Composer](https://img.shields.io/badge/Composer-Required-brightgreen)](https://getcomposer.org/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+A lightweight PHP extension of [`Parsedown`](https://github.com/erusev/parsedown) that adds:
+
+* Audio and video embedding using markdown syntax
+* Automatic Table of Contents generation
+* Responsive HTML tables
+* External links automatically open in a new tab when the hostname differs
+
 
 ---
 
-```bash 
-composer install nanoblocktech/markdown
+## Installation
+
+Installation via composer.
+
+```bash
+composer require nanoblocktech/markdown
 ```
 
-Initialize markdown.
+---
+
+## Quick Start
 
 ```php
+use Luminova\ExtraUtils\HtmlDocuments\Markdown;
+
 $markdown = new Markdown();
+
+echo $markdown->text('### Hello World');
 ```
 
-### Audio Embedding 
+---
+
+## Media Embedding
+
+Embedding audio and videos in markdown. 
+
+### Audio
 
 ```markdown
 {Description}(audio)(/path/to/audio.opus)
 ```
 
-### Video Embedding 
+### Video
 
 ```markdown
 {Description}(video)(/path/to/video.mp4)
 ```
 
-Configure markdown 
+> Supports both local and remote URLs.
+
+---
+
+## Configuration
+
+### Enable Features
 
 ```php
-// Enable table of contents
+// Generate table of contents
 $markdown->tableOfContents(true);
 
-// Enable responsive HTML table
+// Make HTML tables responsive
 $markdown->responsiveTable(true);
+```
 
-// Set heading to allow in the table of contents
+---
+
+### Table of Contents Options
+
+```php
+// Include specific heading levels
 $markdown->setHeadings(['h1', 'h2']);
 
-// Set id prefix for table of contents 
+// Prefix for generated heading IDs
 $markdown->setIdPrefix('my-contents-');
 
-// Add a base link to markdown
-$markdown->setLink('https://example.com/assets/');
+// Retrieve generated table of contents
+$tableOfContents = $markdown->getTableOfContents();
+```
 
-// Set media type
+---
+
+### Link Handling
+
+```php
+// Base URL for relative links
+$markdown->setLink('https://example.com/assets/');
+```
+
+---
+
+### Media Types
+
+```php
+$markdown->setMediaType('audio', 'audio/ogg; codecs=opus');
+$markdown->setMediaType('video', 'video/mp4');
+```
+
+---
+
+## Rendering Markdown
+
+```php
+echo $markdown->text($content);
+```
+
+---
+
+## Full Example
+
+```php
+$markdown = new Markdown();
+$markdown->tableOfContents(true);
+$markdown->responsiveTable(true);
+$markdown->setHeadings(['h1', 'h2']);
+$markdown->setIdPrefix('toc-');
+$markdown->setLink('https://example.com/assets/');
 $markdown->setMediaType('audio', 'audio/ogg; codecs=opus');
 $markdown->setMediaType('video', 'video/mp4');
 
-// Get table of contents
-$arry = $markdown->getTableOfContents();
+$mdText = <<<MD
+# Welcome
+Some intro text.
+
+## Audio Example
+{Cool song}(audio)(/media/song.opus)
+
+## Video Example
+{Demo video}(video)(/media/demo.mp4)
+MD;
+
+echo $markdown->text($mdText);
 ```
 
-Display your markdown text 
+---
 
-```php
-$markdown->text('### Hello');
-```
+## Features vs Parsedown
+
+| Feature                            | Parsedown | PHP Markdown Extension |
+| ---------------------------------- | --------- | ---------------------- |
+| Markdown rendering                 | ✅         | ✅                      |
+| Audio embedding                    | ❌         | ✅                      |
+| Video embedding                    | ❌         | ✅                      |
+| Table of Contents generation       | ❌         | ✅                      |
+| Responsive HTML tables             | ❌         | ✅                      |
+| Auto external link target="_blank" | ❌         | ✅                      |
+
+
+---
+
+> **Notes:**
+>
+> * External links automatically receive `target="_blank"` when the host differs from your application domain.
+> * Media embedding works with local paths or remote URLs.
+> * Table of contents is generated from configured heading levels only.
