@@ -410,8 +410,8 @@ class Markdown extends Parsedown
 
 					$value = self::escape($value);
 
-					if($eleName === 'a'){
-						if ($name === 'href' && !filter_var($value , FILTER_VALIDATE_URL)) {
+					if($eleName === 'a' && $name === 'href'){
+						if (!filter_var($value , FILTER_VALIDATE_URL)) {
 							$markup .= ' ' . $name . '="' . $this->hostLink . '/' . ltrim($value, '/') . '"';
 							continue;
 						}
